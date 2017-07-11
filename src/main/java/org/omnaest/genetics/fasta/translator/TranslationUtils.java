@@ -110,14 +110,16 @@ public class TranslationUtils
 						this.aminoAcidCodes.clear();
 						this.aminoAcidCodes.add(aminoAcidCodeAndPosition);
 						this.validStartCodon.set(true);
-					} else if (AminoAcidCode.STOP.equals(aminoAcidCode))
+					}
+					else if (AminoAcidCode.STOP.equals(aminoAcidCode))
 					{
 						if (this.validStartCodon.get() && !this.aminoAcidCodes.isEmpty())
 						{
 							retval = true;
 						}
 						this.validStartCodon.set(false);
-					} else if (this.validStartCodon.get())
+					}
+					else if (this.validStartCodon.get())
 					{
 						this.aminoAcidCodes.add(aminoAcidCodeAndPosition);
 					}
