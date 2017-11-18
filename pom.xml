@@ -84,8 +84,13 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.7.24</version>
 		</dependency>
-		
 
+
+		<dependency>
+			<groupId>org.omnaest.genetics</groupId>
+			<artifactId>NucleicAcidSequenceTranslation4J</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>

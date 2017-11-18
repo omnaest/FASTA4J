@@ -6,16 +6,19 @@
  */
 package org.omnaest.genetics.fasta;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,23 +29,314 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
+import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.omnaest.genetics.fasta.domain.FASTAData;
+import org.omnaest.genetics.fasta.domain.FASTADataWriter;
 import org.omnaest.genetics.fasta.translator.TranslatableCode;
 import org.omnaest.genetics.fasta.translator.TranslatableCodeImpl;
 
+/**
+ * Utils to read and write FASTA file format
+ * 
+ * @see #load()
+ * @author omnaest
+ */
 public class FastaUtils
 {
 
 	private static final String	LINE_BREAK			= "\n";
 	private static final String	PREFIX_COMMENT		= ";";
 	private static final String	PREFIX_DESCRIPTION	= ">";
+
+	public static interface FASTADataLoader
+	{
+		/**
+		 * Similar to {@link #from(File, Charset)} using {@link StandardCharsets#UTF_8}
+		 * 
+		 * @param file
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData from(File file) throws IOException;
+
+		/**
+		 * Similar to {@link #fromGZIP(File, Charset)} with {@link StandardCharsets#UTF_8}
+		 * 
+		 * @param file
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData fromGZIP(File file) throws IOException;
+
+		/**
+		 * Loads from a GZIP file
+		 * 
+		 * @see StandardCharsets
+		 * @param file
+		 * @param charset
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData fromGZIP(File file, Charset charset) throws IOException;
+
+		/**
+		 * Loads from a {@link File}
+		 * 
+		 * @see StandardCharsets
+		 * @param file
+		 * @param charset
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData from(File file, Charset charset) throws IOException;
+
+		/**
+		 * Similar to {@link #fromGZIP(InputStream, Charset)} using {@link StandardCharsets#UTF_8}
+		 * 
+		 * @param inputStream
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData fromGZIP(InputStream inputStream) throws IOException;
+
+		/**
+		 * Loads from a GZIP {@link InputStream}
+		 * 
+		 * @see StandardCharsets
+		 * @param inputStream
+		 * @param charset
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData fromGZIP(InputStream inputStream, Charset charset) throws IOException;
+
+		/**
+		 * Similar to {@link #from(InputStream, Charset)} using {@link StandardCharsets#UTF_8}
+		 * 
+		 * @param inputStream
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData from(InputStream inputStream) throws IOException;
+
+		/**
+		 * Loads from a given {@link InputStream} and {@link Charset}
+		 * 
+		 * @see StandardCharsets
+		 * @param inputStream
+		 * @param charset
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData from(InputStream inputStream, Charset charset) throws IOException;
+
+		/**
+		 * Loads the FASTA data from a {@link Reader}
+		 * 
+		 * @param reader
+		 * @return
+		 * @throws IOException
+		 */
+		FASTAData from(Reader reader) throws IOException;
+	}
+
+	public static FASTADataLoader load()
+	{
+		return new FASTADataLoader()
+		{
+
+			@Override
+			public FASTAData from(File file) throws IOException
+			{
+				return this.from(file, StandardCharsets.UTF_8);
+			}
+
+			@Override
+			public FASTAData from(File file, Charset charset) throws IOException
+			{
+				return this.from(new FileInputStream(file), charset);
+			}
+
+			@Override
+			public FASTAData fromGZIP(File file) throws IOException
+			{
+				return this.fromGZIP(file, StandardCharsets.UTF_8);
+			}
+
+			@Override
+			public FASTAData fromGZIP(File file, Charset charset) throws IOException
+			{
+				return this.fromGZIP(new FileInputStream(file), charset);
+			}
+
+			@Override
+			public FASTAData fromGZIP(InputStream inputStream) throws IOException
+			{
+				return this.fromGZIP(inputStream, StandardCharsets.UTF_8);
+			}
+
+			@Override
+			public FASTAData fromGZIP(InputStream inputStream, Charset charset) throws IOException
+			{
+				return this.from(new GZIPInputStream(new BufferedInputStream(inputStream)), charset);
+			}
+
+			@Override
+			public FASTAData from(InputStream inputStream) throws IOException
+			{
+				return this.from(inputStream, StandardCharsets.UTF_8);
+			}
+
+			@Override
+			public FASTAData from(InputStream inputStream, Charset charset) throws IOException
+			{
+				return this.from(new InputStreamReader(new BufferedInputStream(inputStream), charset));
+			}
+
+			@Override
+			public FASTAData from(Reader reader) throws IOException
+			{
+				Stream<CodeAndMeta> retval;
+				Stream<String> lineStream = null;
+				try
+				{
+					LineIterator it = IOUtils.lineIterator(reader);
+					lineStream = StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, Spliterator.ORDERED), false);
+
+					lineStream.onClose(() ->
+					{
+						IOUtils.closeQuietly(reader);
+					});
+
+					AtomicBoolean readingMetaData = new AtomicBoolean(false);
+					CodeAndMetaImpl codeAndMeta = new CodeAndMetaImpl();
+					retval = lineStream.flatMap(line ->
+					{
+						line = StringUtils.trim(line);
+
+						String codeLine = "";
+						boolean isDescriptionLine = StringUtils.startsWith(line, PREFIX_DESCRIPTION);
+						boolean isCommentLine = StringUtils.startsWith(line, PREFIX_COMMENT);
+						if (isDescriptionLine || isCommentLine)
+						{
+							if (!readingMetaData.get())
+							{
+								readingMetaData.set(true);
+								codeAndMeta.clearDescriptions();
+								codeAndMeta.clearComments();
+								codeAndMeta.setCommentChanged(false);
+								codeAndMeta.setDescriptionChanged(false);
+							}
+
+							if (isDescriptionLine)
+							{
+								codeAndMeta	.getDescriptions()
+											.add(StringUtils.removeStart(line, PREFIX_DESCRIPTION));
+							}
+							else if (isCommentLine)
+							{
+								codeAndMeta	.getComments()
+											.add(StringUtils.removeStart(line, PREFIX_COMMENT));
+							}
+						}
+						else if (StringUtils.isBlank(line))
+						{
+							//ignore blank lines
+						}
+						else
+						{
+							//
+							if (readingMetaData.get())
+							{
+								codeAndMeta.setCommentChanged(true);
+								codeAndMeta.setDescriptionChanged(true);
+								readingMetaData.set(false);
+							}
+
+							//remove asterix from end if present
+							codeLine = line;// StringUtils.removeEnd(line, "*");
+						}
+
+						AtomicBoolean firstCode = new AtomicBoolean(true);
+						return Arrays	.asList(ArrayUtils.toObject(codeLine.toCharArray()))
+										.stream()
+										.map(code ->
+										{
+											if (!firstCode.getAndSet(false))
+											{
+												codeAndMeta.resetCommentChanged();
+												codeAndMeta.resetDescriptionChanged();
+											}
+
+											codeAndMeta.incrementReadPosition();
+											codeAndMeta.setCodeReference(code);
+											return codeAndMeta;
+										});
+					});
+				} catch (Exception e)
+				{
+					throw new IOException("Failed to read fasta source", e);
+				}
+
+				return new FASTAData()
+				{
+
+					@Override
+					public Stream<CodeAndMeta> getSequence()
+					{
+						return retval;
+					}
+
+					@Override
+					public FASTADataWriter write()
+					{
+						return new FASTADataWriter()
+						{
+
+							@Override
+							public void to(File file) throws IOException
+							{
+								Writer writer = new FileWriterWithEncoding(file, StandardCharsets.UTF_8);
+								this.to(writer);
+							}
+
+							@Override
+							public void to(Writer writer) throws IOException
+							{
+								writeTo(getSequence(), writer);
+							}
+
+							@Override
+							public String toString()
+							{
+								StringWriter writer = new StringWriter();
+								try
+								{
+									this.to(writer);
+								} catch (IOException e)
+								{
+									throw new IllegalStateException(e);
+								}
+								return writer.toString();
+							}
+
+						};
+					}
+
+				};
+			}
+		};
+	}
 
 	public static String loadRawTop(String fileName) throws IOException
 	{
@@ -257,86 +551,8 @@ public class FastaUtils
 
 	public static Stream<CodeAndMeta> loadToStream(Reader input) throws IOException
 	{
-		Stream<CodeAndMeta> retval = null;
-		Stream<String> lineStream = null;
-		try
-		{
-			LineIterator it = IOUtils.lineIterator(input);
-			lineStream = StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, Spliterator.ORDERED), false);
-
-			lineStream.onClose(() ->
-			{
-				IOUtils.closeQuietly(input);
-			});
-
-			AtomicBoolean readingMetaData = new AtomicBoolean(false);
-			CodeAndMetaImpl codeAndMeta = new CodeAndMetaImpl();
-			retval = lineStream.flatMap(line ->
-			{
-				line = StringUtils.trim(line);
-
-				String codeLine = "";
-				boolean isDescriptionLine = StringUtils.startsWith(line, PREFIX_DESCRIPTION);
-				boolean isCommentLine = StringUtils.startsWith(line, PREFIX_COMMENT);
-				if (isDescriptionLine || isCommentLine)
-				{
-					if (!readingMetaData.get())
-					{
-						readingMetaData.set(true);
-						codeAndMeta.clearDescriptions();
-						codeAndMeta.clearComments();
-						codeAndMeta.setCommentChanged(false);
-						codeAndMeta.setDescriptionChanged(false);
-					}
-
-					if (isDescriptionLine)
-					{
-						codeAndMeta	.getDescriptions()
-									.add(StringUtils.removeStart(line, PREFIX_DESCRIPTION));
-					} else if (isCommentLine)
-					{
-						codeAndMeta	.getComments()
-									.add(StringUtils.removeStart(line, PREFIX_COMMENT));
-					}
-				} else if (StringUtils.isBlank(line))
-				{
-					//ignore blank lines
-				} else
-				{
-					//
-					if (readingMetaData.get())
-					{
-						codeAndMeta.setCommentChanged(true);
-						codeAndMeta.setDescriptionChanged(true);
-						readingMetaData.set(false);
-					}
-
-					//remove asterix from end if present
-					codeLine = StringUtils.removeEnd(line, "*");
-				}
-
-				AtomicBoolean firstCode = new AtomicBoolean(true);
-				return Arrays	.asList(ArrayUtils.toObject(codeLine.toCharArray()))
-								.stream()
-								.map(code ->
-								{
-									if (!firstCode.getAndSet(false))
-									{
-										codeAndMeta.resetCommentChanged();
-										codeAndMeta.resetDescriptionChanged();
-									}
-
-									codeAndMeta.incrementReadPosition();
-									codeAndMeta.setCodeReference(code);
-									return codeAndMeta;
-								});
-			});
-		} catch (Exception e)
-		{
-			throw new IOException("Failed to read fasta source", e);
-		}
-
-		return retval;
+		return load()	.from(input)
+						.getSequence();
 	}
 
 	public static void writeTo(Stream<CodeAndMeta> codeSequence, String fileName) throws IOException
@@ -366,14 +582,17 @@ public class FastaUtils
 					{
 						for (String description : codeAndMeta.getDescriptions())
 						{
-							writer.write(LINE_BREAK + PREFIX_DESCRIPTION + description + LINE_BREAK);
+							writer.write(LINE_BREAK + LINE_BREAK + PREFIX_DESCRIPTION + description + LINE_BREAK);
 						}
 					}
 					if (codeAndMeta.hasCommentChanged())
 					{
-						for (String comment : codeAndMeta.getComments())
+						String comments = codeAndMeta	.getComments()
+														.stream()
+														.collect(Collectors.joining(LINE_BREAK + PREFIX_COMMENT));
+						if (!StringUtils.isBlank(comments))
 						{
-							writer.write(LINE_BREAK + PREFIX_COMMENT + comment + LINE_BREAK);
+							writer.write(LINE_BREAK + PREFIX_COMMENT + comments + LINE_BREAK);
 						}
 					}
 
@@ -384,6 +603,8 @@ public class FastaUtils
 					{
 						writer.write(LINE_BREAK);
 					}
+
+					writer.close();
 				} catch (IOException e)
 				{
 					throw new RuntimeException("Failed to write code sequence to FASTA format", e);
