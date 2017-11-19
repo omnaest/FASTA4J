@@ -219,7 +219,7 @@ public class FastaUtils
 					});
 
 					AtomicBoolean readingMetaData = new AtomicBoolean(false);
-					CodeAndMetaImpl codeAndMeta = new CodeAndMetaImpl();
+					CodeAndMetaFactory codeAndMeta = new CodeAndMetaFactory();
 					retval = lineStream.flatMap(line ->
 					{
 						line = StringUtils.trim(line);
@@ -240,13 +240,11 @@ public class FastaUtils
 
 							if (isDescriptionLine)
 							{
-								codeAndMeta	.getDescriptions()
-											.add(StringUtils.removeStart(line, PREFIX_DESCRIPTION));
+								codeAndMeta.addDescription(StringUtils.removeStart(line, PREFIX_DESCRIPTION));
 							}
 							else if (isCommentLine)
 							{
-								codeAndMeta	.getComments()
-											.add(StringUtils.removeStart(line, PREFIX_COMMENT));
+								codeAndMeta.addComment(StringUtils.removeStart(line, PREFIX_COMMENT));
 							}
 						}
 						else if (StringUtils.isBlank(line))
@@ -280,7 +278,7 @@ public class FastaUtils
 
 											codeAndMeta.incrementReadPosition();
 											codeAndMeta.setCodeReference(code);
-											return codeAndMeta;
+											return codeAndMeta.createInstance();
 										});
 					});
 				} catch (Exception e)
@@ -367,7 +365,72 @@ public class FastaUtils
 		return retval;
 	}
 
-	private static final class CodeAndMetaImpl implements CodeAndMeta
+	private static class CodeAndMetaImpl2 implements CodeAndMeta
+	{
+		private List<String>	descriptions;
+		private boolean			descriptionChanged;
+		private List<String>	comments;
+		private boolean			commentsChanged;
+		private Character		codeReference;
+		private long			readPosition;
+
+		public CodeAndMetaImpl2(List<String> descriptions, boolean descriptionChanged, List<String> comments, boolean commentsChanged, Character codeReference,
+								long readPosition)
+		{
+			super();
+			this.descriptions = descriptions;
+			this.descriptionChanged = descriptionChanged;
+			this.comments = comments;
+			this.commentsChanged = commentsChanged;
+			this.codeReference = codeReference;
+			this.readPosition = readPosition;
+		}
+
+		@Override
+		public List<String> getDescriptions()
+		{
+			return this.descriptions;
+		}
+
+		@Override
+		public List<String> getComments()
+		{
+			return this.comments;
+		}
+
+		@Override
+		public long getReadPosition()
+		{
+			return this.readPosition;
+		}
+
+		@Override
+		public char getCode()
+		{
+			return this.codeReference;
+		}
+
+		@Override
+		public TranslatableCode getTranslatableCode()
+		{
+			return new TranslatableCodeImpl(this.getCode());
+		}
+
+		@Override
+		public boolean hasDescriptionChanged()
+		{
+			return this.descriptionChanged;
+		}
+
+		@Override
+		public boolean hasCommentChanged()
+		{
+			return this.commentsChanged;
+		}
+
+	}
+
+	private static final class CodeAndMetaFactory
 	{
 		private AtomicReference<List<String>>	descriptions		= new AtomicReference<>(new ArrayList<>());
 		private AtomicBoolean					descriptionChanged	= new AtomicBoolean(false);
@@ -376,27 +439,34 @@ public class FastaUtils
 		private AtomicReference<Character>		codeReference		= new AtomicReference<>(null);
 		private AtomicLong						readPosition		= new AtomicLong();
 
-		@Override
-		public List<String> getDescriptions()
-		{
-			return this.descriptions.get();
-		}
-
-		@Override
-		public List<String> getComments()
-		{
-			return this.comments.get();
-		}
-
-		@Override
-		public char getCode()
-		{
-			return this.codeReference.get();
-		}
-
 		public void setCodeReference(Character code)
 		{
 			this.codeReference.set(code);
+		}
+
+		public void addComment(String comment)
+		{
+			if (StringUtils.isNotBlank(comment))
+			{
+				this.comments	.get()
+								.add(comment);
+			}
+		}
+
+		public CodeAndMetaFactory addDescription(String description)
+		{
+			if (StringUtils.isNotBlank(description))
+			{
+				this.descriptions	.get()
+									.add(description);
+			}
+			return this;
+		}
+
+		public CodeAndMeta createInstance()
+		{
+			return new CodeAndMetaImpl2(this.descriptions.get(), this.descriptionChanged.get(), this.comments.get(), this.commentsChanged.get(),
+										this.codeReference.get(), this.readPosition.get());
 		}
 
 		public void clearDescriptions()
@@ -412,37 +482,13 @@ public class FastaUtils
 		@Override
 		public String toString()
 		{
-			return "CodeAndMetaImpl [getDescriptions()=" + this.getDescriptions() + ", getComments()=" + this.getComments() + ", getCode()=" + this.getCode()
-					+ "]";
-		}
-
-		@Override
-		public TranslatableCode getTranslatableCode()
-		{
-			return new TranslatableCodeImpl(this.getCode());
+			return "CodeAndMetaFactory [descriptions=" + this.descriptions + ", descriptionChanged=" + this.descriptionChanged + ", comments=" + this.comments
+					+ ", commentsChanged=" + this.commentsChanged + ", codeReference=" + this.codeReference + ", readPosition=" + this.readPosition + "]";
 		}
 
 		public void incrementReadPosition()
 		{
 			this.readPosition.incrementAndGet();
-		}
-
-		@Override
-		public long getReadPosition()
-		{
-			return this.readPosition.get();
-		}
-
-		@Override
-		public boolean hasDescriptionChanged()
-		{
-			return this.descriptionChanged.get();
-		}
-
-		@Override
-		public boolean hasCommentChanged()
-		{
-			return this.commentsChanged.get();
 		}
 
 		public void setDescriptionChanged(boolean changed)
