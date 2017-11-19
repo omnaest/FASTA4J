@@ -1,7 +1,7 @@
 # FASTA4J
 FASTA file format utils
 
-##Example
+## Example
 
 		long sequenceLength = FastaUtils.load()
 										.fromGZIP(new File("/chr21.fa.gz"))
