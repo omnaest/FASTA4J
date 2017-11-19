@@ -365,37 +365,16 @@ public class FastaUtils
 		return retval;
 	}
 
-	private static class CodeAndMetaImpl2 implements CodeAndMeta
+	private static class CodeImpl implements Code
 	{
-		private List<String>	descriptions;
-		private boolean			descriptionChanged;
-		private List<String>	comments;
-		private boolean			commentsChanged;
-		private Character		codeReference;
-		private long			readPosition;
+		private char	codeReference;
+		private long	readPosition;
 
-		public CodeAndMetaImpl2(List<String> descriptions, boolean descriptionChanged, List<String> comments, boolean commentsChanged, Character codeReference,
-								long readPosition)
+		public CodeImpl(char codeReference, long readPosition)
 		{
 			super();
-			this.descriptions = descriptions;
-			this.descriptionChanged = descriptionChanged;
-			this.comments = comments;
-			this.commentsChanged = commentsChanged;
 			this.codeReference = codeReference;
 			this.readPosition = readPosition;
-		}
-
-		@Override
-		public List<String> getDescriptions()
-		{
-			return this.descriptions;
-		}
-
-		@Override
-		public List<String> getComments()
-		{
-			return this.comments;
 		}
 
 		@Override
@@ -417,6 +396,42 @@ public class FastaUtils
 		}
 
 		@Override
+		public String toString()
+		{
+			return "CodeImpl [codeReference=" + this.codeReference + ", readPosition=" + this.readPosition + "]";
+		}
+
+	}
+
+	private static class MetaImpl implements Meta
+	{
+		private List<String>	descriptions;
+		private boolean			descriptionChanged;
+		private List<String>	comments;
+		private boolean			commentsChanged;
+
+		public MetaImpl(List<String> descriptions, boolean descriptionChanged, List<String> comments, boolean commentsChanged)
+		{
+			super();
+			this.descriptions = descriptions;
+			this.descriptionChanged = descriptionChanged;
+			this.comments = comments;
+			this.commentsChanged = commentsChanged;
+		}
+
+		@Override
+		public List<String> getDescriptions()
+		{
+			return this.descriptions;
+		}
+
+		@Override
+		public List<String> getComments()
+		{
+			return this.comments;
+		}
+
+		@Override
 		public boolean hasDescriptionChanged()
 		{
 			return this.descriptionChanged;
@@ -426,6 +441,81 @@ public class FastaUtils
 		public boolean hasCommentChanged()
 		{
 			return this.commentsChanged;
+		}
+
+		@Override
+		public String toString()
+		{
+			return "MetaImpl [descriptions=" + this.descriptions + ", descriptionChanged=" + this.descriptionChanged + ", comments=" + this.comments
+					+ ", commentsChanged=" + this.commentsChanged + "]";
+		}
+
+	}
+
+	private static class CodeAndMetaImpl implements CodeAndMeta
+	{
+		private Code	code;
+		private Meta	meta;
+
+		public CodeAndMetaImpl(Code code, Meta meta)
+		{
+			super();
+			this.code = code;
+			this.meta = meta;
+		}
+
+		@Override
+		public Code asCode()
+		{
+			return this.code;
+		}
+
+		@Override
+		public char getCode()
+		{
+			return this.code.getCode();
+		}
+
+		@Override
+		public TranslatableCode getTranslatableCode()
+		{
+			return this.code.getTranslatableCode();
+		}
+
+		@Override
+		public long getReadPosition()
+		{
+			return this.code.getReadPosition();
+		}
+
+		@Override
+		public List<String> getDescriptions()
+		{
+			return this.meta.getDescriptions();
+		}
+
+		@Override
+		public boolean hasDescriptionChanged()
+		{
+			return this.meta.hasDescriptionChanged();
+		}
+
+		@Override
+		public List<String> getComments()
+		{
+			return this.meta.getComments();
+		}
+
+		@Override
+		public boolean hasCommentChanged()
+		{
+			return this.meta.hasCommentChanged();
+		}
+
+		@Override
+		public String toString()
+		{
+			return "CodeAndMetaImpl [code=" + this.code + ", meta=" + this.meta + "]";
 		}
 
 	}
@@ -465,8 +555,8 @@ public class FastaUtils
 
 		public CodeAndMeta createInstance()
 		{
-			return new CodeAndMetaImpl2(this.descriptions.get(), this.descriptionChanged.get(), this.comments.get(), this.commentsChanged.get(),
-										this.codeReference.get(), this.readPosition.get());
+			return new CodeAndMetaImpl(	new CodeImpl(this.codeReference.get(), this.readPosition.get()),
+										new MetaImpl(this.descriptions.get(), this.descriptionChanged.get(), this.comments.get(), this.commentsChanged.get()));
 		}
 
 		public void clearDescriptions()
@@ -512,7 +602,7 @@ public class FastaUtils
 		}
 	}
 
-	public static interface CodeAndMeta
+	public static interface Code
 	{
 		/**
 		 * Returns the raw code which has been read for the current position
@@ -527,6 +617,17 @@ public class FastaUtils
 		 * @return
 		 */
 		public TranslatableCode getTranslatableCode();
+
+		/**
+		 * Returns the read position within the {@link Stream} of codes
+		 *
+		 * @return
+		 */
+		long getReadPosition();
+	}
+
+	public static interface Meta
+	{
 
 		/**
 		 * Returns the last encountered descriptions for the current code read position.<br>
@@ -570,13 +671,11 @@ public class FastaUtils
 		 * @return
 		 */
 		public boolean hasCommentChanged();
+	}
 
-		/**
-		 * Returns the read position within the {@link Stream} of codes
-		 *
-		 * @return
-		 */
-		long getReadPosition();
+	public static interface CodeAndMeta extends Code, Meta
+	{
+		public Code asCode();
 	}
 
 	public static Stream<CodeAndMeta> loadToStream(String fileName) throws IOException
