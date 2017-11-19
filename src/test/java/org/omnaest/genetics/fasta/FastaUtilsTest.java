@@ -18,8 +18,10 @@
 */
 package org.omnaest.genetics.fasta;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,19 +42,13 @@ public class FastaUtilsTest
 		FASTAData fastaData = FastaUtils.load()
 										.fromGZIP(this	.getClass()
 														.getResourceAsStream("/chr21.fa.gz"));
-		List<CodeAndMeta> sequence = fastaData	.getSequence()
-												.collect(Collectors.toList());
-		long sequenceLength = sequence.size();
+		char[] sequence = fastaData.asCharacters();
+		long sequenceLength = sequence.length;
 		assertEquals(48129895, sequenceLength);
-
-		System.out.println(sequence	.stream()
-									.skip(355911)
-									.limit(1000)
-									.map(cam -> "" + cam.getCode())
-									.collect(Collectors.joining()));
 	}
 
 	@Test
+	@Ignore
 	public void testLoadGZIPExample() throws Exception
 	{
 		FASTAData fastaData = FastaUtils.load()
@@ -93,6 +89,20 @@ public class FastaUtilsTest
 											StandardCharsets.UTF_8);
 		assertEquals(content.replaceAll("[\r]*[\n]+", ""), parsedContent.replaceAll("[\r]*[\n]+", ""));
 
+	}
+
+	@Test
+	public void testFromRawSequence() throws IOException
+	{
+		char[] rawSequence = FastaUtils	.load()
+										.from(this	.getClass()
+													.getResourceAsStream("/example.fasta"))
+										.asCharacters();
+
+		char[] secondRawSequence = FastaUtils	.load()
+												.fromRawSequence(rawSequence)
+												.asCharacters();
+		assertArrayEquals(rawSequence, secondRawSequence);
 	}
 
 }

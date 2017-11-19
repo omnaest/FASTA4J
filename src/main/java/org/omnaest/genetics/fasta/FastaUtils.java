@@ -7,6 +7,7 @@
 package org.omnaest.genetics.fasta;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -22,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -44,6 +47,7 @@ import org.omnaest.genetics.fasta.domain.FASTAData;
 import org.omnaest.genetics.fasta.domain.FASTADataWriter;
 import org.omnaest.genetics.fasta.translator.TranslatableCode;
 import org.omnaest.genetics.fasta.translator.TranslatableCodeImpl;
+import org.omnaest.utils.IteratorUtils;
 
 /**
  * Utils to read and write FASTA file format
@@ -57,6 +61,82 @@ public class FastaUtils
 	private static final String	LINE_BREAK			= "\n";
 	private static final String	PREFIX_COMMENT		= ";";
 	private static final String	PREFIX_DESCRIPTION	= ">";
+
+	private static class FASTADataImpl implements FASTAData
+	{
+		private Stream<CodeAndMeta> sequence;
+
+		public FASTADataImpl(Stream<CodeAndMeta> sequence)
+		{
+			this.sequence = sequence;
+		}
+
+		@Override
+		public Stream<CodeAndMeta> getSequence()
+		{
+			return this.sequence;
+		}
+
+		@Override
+		public char[] asCharacters()
+		{
+			return ArrayUtils.toPrimitive(this	.getSequence()
+												.map(cam -> cam.getRawCode())
+												.toArray(Character[]::new));
+		}
+
+		@Override
+		public Code[] asCodes()
+		{
+			return this	.getSequence()
+						.map(cam -> cam.asCode())
+						.toArray(Code[]::new);
+		}
+
+		@Override
+		public FASTADataWriter write()
+		{
+			return new FASTADataWriter()
+			{
+
+				@Override
+				public void to(File file) throws IOException
+				{
+					FileUtils.forceMkdirParent(file);
+					Writer writer = new FileWriterWithEncoding(file, StandardCharsets.UTF_8);
+					this.to(writer);
+				}
+
+				@Override
+				public void toGZIP(File file) throws IOException
+				{
+					FileUtils.forceMkdirParent(file);
+					this.to(new OutputStreamWriter(new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file))), StandardCharsets.UTF_8));
+				}
+
+				@Override
+				public void to(Writer writer) throws IOException
+				{
+					writeTo(FASTADataImpl.this.getSequence(), writer);
+				}
+
+				@Override
+				public String toString()
+				{
+					StringWriter writer = new StringWriter();
+					try
+					{
+						this.to(writer);
+					} catch (IOException e)
+					{
+						throw new IllegalStateException(e);
+					}
+					return writer.toString();
+				}
+
+			};
+		}
+	}
 
 	public static interface FASTADataLoader
 	{
@@ -148,6 +228,14 @@ public class FastaUtils
 		 * @throws IOException
 		 */
 		FASTAData from(Reader reader) throws IOException;
+
+		FASTAData fromSequence(Stream<CodeAndMeta> sequence);
+
+		FASTAData fromCodeSequence(Stream<Code> sequence);
+
+		FASTAData fromRawSequence(char[] sequence);
+
+		FASTAData fromRawSequence(Stream<Character> sequence);
 	}
 
 	public static FASTADataLoader load()
@@ -203,6 +291,7 @@ public class FastaUtils
 				return this.from(new InputStreamReader(new BufferedInputStream(inputStream), charset));
 			}
 
+			@SuppressWarnings("deprecation")
 			@Override
 			public FASTAData from(Reader reader) throws IOException
 			{
@@ -286,53 +375,35 @@ public class FastaUtils
 					throw new IOException("Failed to read fasta source", e);
 				}
 
-				return new FASTAData()
-				{
-
-					@Override
-					public Stream<CodeAndMeta> getSequence()
-					{
-						return retval;
-					}
-
-					@Override
-					public FASTADataWriter write()
-					{
-						return new FASTADataWriter()
-						{
-
-							@Override
-							public void to(File file) throws IOException
-							{
-								Writer writer = new FileWriterWithEncoding(file, StandardCharsets.UTF_8);
-								this.to(writer);
-							}
-
-							@Override
-							public void to(Writer writer) throws IOException
-							{
-								writeTo(getSequence(), writer);
-							}
-
-							@Override
-							public String toString()
-							{
-								StringWriter writer = new StringWriter();
-								try
-								{
-									this.to(writer);
-								} catch (IOException e)
-								{
-									throw new IllegalStateException(e);
-								}
-								return writer.toString();
-							}
-
-						};
-					}
-
-				};
+				return new FASTADataImpl(retval);
 			}
+
+			@Override
+			public FASTAData fromSequence(Stream<CodeAndMeta> sequence)
+			{
+				return new FASTADataImpl(sequence);
+			}
+
+			@Override
+			public FASTAData fromCodeSequence(Stream<Code> sequence)
+			{
+				return this.fromSequence(sequence.map(code -> new CodeAndMetaImpl(code, new EmptyMetaImpl())));
+			}
+
+			@Override
+			public FASTAData fromRawSequence(Stream<Character> sequence)
+			{
+				AtomicLong readPosition = new AtomicLong();
+				return this.fromCodeSequence(sequence.map(codeReference -> (Code) new CodeImpl(codeReference, readPosition.getAndIncrement())));
+			}
+
+			@Override
+			public FASTAData fromRawSequence(char[] sequence)
+			{
+				return this.fromRawSequence(Arrays	.asList(ArrayUtils.toObject(sequence))
+													.stream());
+			}
+
 		};
 	}
 
@@ -384,7 +455,7 @@ public class FastaUtils
 		}
 
 		@Override
-		public char getCode()
+		public char getRawCode()
 		{
 			return this.codeReference;
 		}
@@ -392,13 +463,29 @@ public class FastaUtils
 		@Override
 		public TranslatableCode getTranslatableCode()
 		{
-			return new TranslatableCodeImpl(this.getCode());
+			return new TranslatableCodeImpl(this.getRawCode());
 		}
 
 		@Override
 		public String toString()
 		{
 			return "CodeImpl [codeReference=" + this.codeReference + ", readPosition=" + this.readPosition + "]";
+		}
+
+		@Override
+		public Code newInstanceWithReplacedCode(char rawCode)
+		{
+			return new CodeImpl(rawCode, this.readPosition);
+		}
+
+	}
+
+	private static class EmptyMetaImpl extends MetaImpl
+	{
+
+		public EmptyMetaImpl()
+		{
+			super(Collections.emptyList(), false, Collections.emptyList(), false);
 		}
 
 	}
@@ -471,9 +558,15 @@ public class FastaUtils
 		}
 
 		@Override
-		public char getCode()
+		public Code newInstanceWithReplacedCode(char rawCode)
 		{
-			return this.code.getCode();
+			return this.code.newInstanceWithReplacedCode(rawCode);
+		}
+
+		@Override
+		public char getRawCode()
+		{
+			return this.code.getRawCode();
 		}
 
 		@Override
@@ -609,10 +702,10 @@ public class FastaUtils
 		 *
 		 * @return
 		 */
-		public char getCode();
+		public char getRawCode();
 
 		/**
-		 * Returns a {@link TranslatableCode} wrapper around the raw {@link #getCode()}
+		 * Returns a {@link TranslatableCode} wrapper around the raw {@link #getRawCode()}
 		 *
 		 * @return
 		 */
@@ -623,7 +716,15 @@ public class FastaUtils
 		 *
 		 * @return
 		 */
-		long getReadPosition();
+		public long getReadPosition();
+
+		/**
+		 * Returns a new {@link Code} instance with the same read position but new code reference
+		 * 
+		 * @param replacement
+		 * @return
+		 */
+		public Code newInstanceWithReplacedCode(char rawCode);
 	}
 
 	public static interface Meta
@@ -713,48 +814,45 @@ public class FastaUtils
 		}
 	}
 
-	public static void writeTo(Stream<CodeAndMeta> codeSequence, Writer writer)
+	private static void writeTo(Stream<CodeAndMeta> codeSequence, Writer writer) throws IOException
 	{
 		if (codeSequence != null)
 		{
 			final int columnsMax = 80;
 			AtomicInteger columnCounter = new AtomicInteger(0);
-			codeSequence.forEach(codeAndMeta ->
+
+			for (CodeAndMeta codeAndMeta : IteratorUtils.toIterable(() -> codeSequence.iterator()))
 			{
-				try
+
+				if (codeAndMeta.hasDescriptionChanged())
 				{
-					if (codeAndMeta.hasDescriptionChanged())
+					for (String description : codeAndMeta.getDescriptions())
 					{
-						for (String description : codeAndMeta.getDescriptions())
-						{
-							writer.write(LINE_BREAK + LINE_BREAK + PREFIX_DESCRIPTION + description + LINE_BREAK);
-						}
+						writer.write(LINE_BREAK + LINE_BREAK + PREFIX_DESCRIPTION + description + LINE_BREAK);
 					}
-					if (codeAndMeta.hasCommentChanged())
-					{
-						String comments = codeAndMeta	.getComments()
-														.stream()
-														.collect(Collectors.joining(LINE_BREAK + PREFIX_COMMENT));
-						if (!StringUtils.isBlank(comments))
-						{
-							writer.write(LINE_BREAK + PREFIX_COMMENT + comments + LINE_BREAK);
-						}
-					}
-
-					writer.write(codeAndMeta.getCode());
-
-					int columnCount = columnCounter.incrementAndGet();
-					if (columnCount % columnsMax == 0)
-					{
-						writer.write(LINE_BREAK);
-					}
-
-					writer.close();
-				} catch (IOException e)
-				{
-					throw new RuntimeException("Failed to write code sequence to FASTA format", e);
 				}
-			});
+				if (codeAndMeta.hasCommentChanged())
+				{
+					String comments = codeAndMeta	.getComments()
+													.stream()
+													.collect(Collectors.joining(LINE_BREAK + PREFIX_COMMENT));
+					if (!StringUtils.isBlank(comments))
+					{
+						writer.write(LINE_BREAK + PREFIX_COMMENT + comments + LINE_BREAK);
+					}
+				}
+
+				writer.write(codeAndMeta.getRawCode());
+
+				int columnCount = columnCounter.incrementAndGet();
+				if (columnCount % columnsMax == 0)
+				{
+					writer.write(LINE_BREAK);
+				}
+
+			}
+
+			writer.close();
 		}
 	}
 }

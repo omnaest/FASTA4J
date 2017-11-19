@@ -21,6 +21,7 @@ package org.omnaest.genetics.fasta.domain;
 import java.util.stream.Stream;
 
 import org.omnaest.genetics.fasta.FastaUtils;
+import org.omnaest.genetics.fasta.FastaUtils.Code;
 import org.omnaest.genetics.fasta.FastaUtils.CodeAndMeta;
 
 /**
@@ -37,6 +38,20 @@ public interface FASTAData
 	 * @return
 	 */
 	public Stream<CodeAndMeta> getSequence();
+
+	/**
+	 * Returns an array representation of the {@link Code} sequence
+	 * 
+	 * @return
+	 */
+	public Code[] asCodes();
+
+	/**
+	 * Returns an array representation of the {@link Character} sequence
+	 * 
+	 * @return
+	 */
+	public char[] asCharacters();
 
 	/**
 	 * @see FASTADataWriter

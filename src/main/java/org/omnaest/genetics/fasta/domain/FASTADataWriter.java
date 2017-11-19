@@ -18,10 +18,16 @@
 */
 package org.omnaest.genetics.fasta.domain;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.io.FileUtils;
 import org.omnaest.genetics.fasta.FastaUtils;
 
 /**
@@ -38,4 +44,6 @@ public interface FASTADataWriter
 
 	@Override
 	public String toString();
+
+	void toGZIP(File file) throws IOException;
 }
