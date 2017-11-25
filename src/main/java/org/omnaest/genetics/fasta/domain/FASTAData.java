@@ -42,6 +42,8 @@ public interface FASTAData
 	/**
 	 * Returns an array representation of the {@link Code} sequence
 	 * 
+	 * @see #asCharacters()
+	 * @see #toString()
 	 * @return
 	 */
 	public Code[] asCodes();
@@ -49,6 +51,7 @@ public interface FASTAData
 	/**
 	 * Returns an array representation of the {@link Character} sequence
 	 * 
+	 * @see #toString()
 	 * @return
 	 */
 	public char[] asCharacters();
@@ -58,4 +61,13 @@ public interface FASTAData
 	 * @return
 	 */
 	public FASTADataWriter write();
+
+	/**
+	 * Returns the {@link String} representation of {@link #asCharacters()}
+	 * 
+	 * @return
+	 */
+	@Override
+	public String toString();
+
 }

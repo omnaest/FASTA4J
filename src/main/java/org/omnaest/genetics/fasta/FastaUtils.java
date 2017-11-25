@@ -47,7 +47,6 @@ import org.omnaest.genetics.fasta.domain.FASTAData;
 import org.omnaest.genetics.fasta.domain.FASTADataWriter;
 import org.omnaest.genetics.fasta.translator.TranslatableCode;
 import org.omnaest.genetics.fasta.translator.TranslatableCodeImpl;
-import org.omnaest.utils.IteratorUtils;
 
 /**
  * Utils to read and write FASTA file format
@@ -83,6 +82,12 @@ public class FastaUtils
 			return ArrayUtils.toPrimitive(this	.getSequence()
 												.map(cam -> cam.getRawCode())
 												.toArray(Character[]::new));
+		}
+
+		@Override
+		public String toString()
+		{
+			return String.valueOf(this.asCharacters());
 		}
 
 		@Override
@@ -436,7 +441,7 @@ public class FastaUtils
 		return retval;
 	}
 
-	private static class CodeImpl implements Code
+	protected static class CodeImpl implements Code
 	{
 		private char	codeReference;
 		private long	readPosition;
@@ -725,6 +730,11 @@ public class FastaUtils
 		 * @return
 		 */
 		public Code newInstanceWithReplacedCode(char rawCode);
+
+		public static Code of(char codeReference, long readPosition)
+		{
+			return new FastaUtils.CodeImpl(codeReference, readPosition);
+		}
 	}
 
 	public static interface Meta
@@ -821,38 +831,56 @@ public class FastaUtils
 			final int columnsMax = 80;
 			AtomicInteger columnCounter = new AtomicInteger(0);
 
-			for (CodeAndMeta codeAndMeta : IteratorUtils.toIterable(() -> codeSequence.iterator()))
+			try
 			{
-
-				if (codeAndMeta.hasDescriptionChanged())
+				codeSequence.forEach(codeAndMeta ->
 				{
-					for (String description : codeAndMeta.getDescriptions())
+					try
 					{
-						writer.write(LINE_BREAK + LINE_BREAK + PREFIX_DESCRIPTION + description + LINE_BREAK);
-					}
-				}
-				if (codeAndMeta.hasCommentChanged())
-				{
-					String comments = codeAndMeta	.getComments()
-													.stream()
-													.collect(Collectors.joining(LINE_BREAK + PREFIX_COMMENT));
-					if (!StringUtils.isBlank(comments))
+
+						if (codeAndMeta.hasDescriptionChanged())
+						{
+							for (String description : codeAndMeta.getDescriptions())
+							{
+								writer.write(LINE_BREAK + LINE_BREAK + PREFIX_DESCRIPTION + description + LINE_BREAK);
+							}
+						}
+						if (codeAndMeta.hasCommentChanged())
+						{
+							String comments = codeAndMeta	.getComments()
+															.stream()
+															.collect(Collectors.joining(LINE_BREAK + PREFIX_COMMENT));
+							if (!StringUtils.isBlank(comments))
+							{
+								writer.write(LINE_BREAK + PREFIX_COMMENT + comments + LINE_BREAK);
+							}
+						}
+
+						writer.write(codeAndMeta.getRawCode());
+
+						int columnCount = columnCounter.incrementAndGet();
+						if (columnCount % columnsMax == 0)
+						{
+							writer.write(LINE_BREAK);
+						}
+
+					} catch (Exception e)
 					{
-						writer.write(LINE_BREAK + PREFIX_COMMENT + comments + LINE_BREAK);
+						throw new IllegalStateException(e);
 					}
-				}
-
-				writer.write(codeAndMeta.getRawCode());
-
-				int columnCount = columnCounter.incrementAndGet();
-				if (columnCount % columnsMax == 0)
+				});
+			} catch (Exception e)
+			{
+				if (e.getCause() instanceof IOException)
 				{
-					writer.write(LINE_BREAK);
+					throw (IOException) e.getCause();
 				}
-
 			}
 
-			writer.close();
+			finally
+			{
+				writer.close();
+			}
 		}
 	}
 }
