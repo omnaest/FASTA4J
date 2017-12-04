@@ -43,8 +43,10 @@ import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.omnaest.genetics.fasta.domain.AminoAcidCodeSequence;
 import org.omnaest.genetics.fasta.domain.FASTAData;
 import org.omnaest.genetics.fasta.domain.FASTADataWriter;
+import org.omnaest.genetics.fasta.domain.NucleicAcidCodeSequence;
 import org.omnaest.genetics.fasta.translator.TranslatableCode;
 import org.omnaest.genetics.fasta.translator.TranslatableCodeImpl;
 
@@ -74,6 +76,22 @@ public class FastaUtils
 		public Stream<CodeAndMeta> getSequence()
 		{
 			return this.sequence;
+		}
+
+		@Override
+		public NucleicAcidCodeSequence asNucleicAcidCodeSequence()
+		{
+			return NucleicAcidCodeSequence.valueOf(this	.getSequence()
+														.map(cam -> cam	.getTranslatableCode()
+																		.asNucleicAcidCode()));
+		}
+
+		@Override
+		public AminoAcidCodeSequence asAminoAcidCodeSequence()
+		{
+			return AminoAcidCodeSequence.valueOf(this	.getSequence()
+														.map(cam -> cam	.getTranslatableCode()
+																		.asAminoAcidCode()));
 		}
 
 		@Override

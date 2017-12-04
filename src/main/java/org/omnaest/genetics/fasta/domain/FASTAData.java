@@ -39,6 +39,10 @@ public interface FASTAData
 	 */
 	public Stream<CodeAndMeta> getSequence();
 
+	public NucleicAcidCodeSequence asNucleicAcidCodeSequence();
+
+	public AminoAcidCodeSequence asAminoAcidCodeSequence();
+
 	/**
 	 * Returns an array representation of the {@link Code} sequence
 	 * 
