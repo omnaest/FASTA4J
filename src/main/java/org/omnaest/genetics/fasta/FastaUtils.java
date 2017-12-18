@@ -43,13 +43,13 @@ import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.omnaest.genetics.fasta.domain.AminoAcidCodeSequence;
 import org.omnaest.genetics.fasta.domain.Code;
 import org.omnaest.genetics.fasta.domain.DefaultCode;
 import org.omnaest.genetics.fasta.domain.FASTAData;
 import org.omnaest.genetics.fasta.domain.FASTADataWriter;
-import org.omnaest.genetics.fasta.domain.NucleicAcidCodeSequence;
-import org.omnaest.genetics.fasta.translator.TranslatableCode;
+import org.omnaest.genetics.translator.TranslatableCode;
+import org.omnaest.genetics.translator.domain.AminoAcidCodeSequence;
+import org.omnaest.genetics.translator.domain.NucleicAcidCodeSequence;
 
 /**
  * Utils to read and write FASTA file format

@@ -20,7 +20,7 @@ package org.omnaest.genetics.fasta.domain;
 
 import java.util.stream.Stream;
 
-import org.omnaest.genetics.fasta.translator.TranslatableCode;
+import org.omnaest.genetics.translator.TranslatableCode;
 
 /**
  * Representation of a code position

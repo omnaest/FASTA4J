@@ -22,6 +22,8 @@ import java.util.stream.Stream;
 
 import org.omnaest.genetics.fasta.FastaUtils;
 import org.omnaest.genetics.fasta.FastaUtils.CodeAndMeta;
+import org.omnaest.genetics.translator.domain.AminoAcidCodeSequence;
+import org.omnaest.genetics.translator.domain.NucleicAcidCodeSequence;
 
 /**
  * Representation of the data of a FASTA file
