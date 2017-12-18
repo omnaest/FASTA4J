@@ -21,7 +21,6 @@ package org.omnaest.genetics.fasta.domain;
 import java.util.stream.Stream;
 
 import org.omnaest.genetics.fasta.FastaUtils;
-import org.omnaest.genetics.fasta.FastaUtils.Code;
 import org.omnaest.genetics.fasta.FastaUtils.CodeAndMeta;
 
 /**

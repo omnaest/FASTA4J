@@ -44,11 +44,12 @@ import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.omnaest.genetics.fasta.domain.AminoAcidCodeSequence;
+import org.omnaest.genetics.fasta.domain.Code;
+import org.omnaest.genetics.fasta.domain.DefaultCode;
 import org.omnaest.genetics.fasta.domain.FASTAData;
 import org.omnaest.genetics.fasta.domain.FASTADataWriter;
 import org.omnaest.genetics.fasta.domain.NucleicAcidCodeSequence;
 import org.omnaest.genetics.fasta.translator.TranslatableCode;
-import org.omnaest.genetics.fasta.translator.TranslatableCodeImpl;
 
 /**
  * Utils to read and write FASTA file format
@@ -82,7 +83,7 @@ public class FastaUtils
 		public NucleicAcidCodeSequence asNucleicAcidCodeSequence()
 		{
 			return NucleicAcidCodeSequence.valueOf(this	.getSequence()
-														.map(cam -> cam	.getTranslatableCode()
+														.map(cam -> cam	.asTranslatableCode()
 																		.asNucleicAcidCode()));
 		}
 
@@ -90,7 +91,7 @@ public class FastaUtils
 		public AminoAcidCodeSequence asAminoAcidCodeSequence()
 		{
 			return AminoAcidCodeSequence.valueOf(this	.getSequence()
-														.map(cam -> cam	.getTranslatableCode()
+														.map(cam -> cam	.asTranslatableCode()
 																		.asAminoAcidCode()));
 		}
 
@@ -417,7 +418,7 @@ public class FastaUtils
 			public FASTAData fromRawSequence(Stream<Character> sequence)
 			{
 				AtomicLong readPosition = new AtomicLong();
-				return this.fromCodeSequence(sequence.map(codeReference -> (Code) new CodeImpl(codeReference, readPosition.getAndIncrement())));
+				return this.fromCodeSequence(sequence.map(codeReference -> (Code) new DefaultCode(codeReference, readPosition.getAndIncrement())));
 			}
 
 			@Override
@@ -457,50 +458,6 @@ public class FastaUtils
 			throw new IOException("Failed to read FASTA source", e);
 		}
 		return retval;
-	}
-
-	protected static class CodeImpl implements Code
-	{
-		private char	codeReference;
-		private long	readPosition;
-
-		public CodeImpl(char codeReference, long readPosition)
-		{
-			super();
-			this.codeReference = codeReference;
-			this.readPosition = readPosition;
-		}
-
-		@Override
-		public long getReadPosition()
-		{
-			return this.readPosition;
-		}
-
-		@Override
-		public char getRawCode()
-		{
-			return this.codeReference;
-		}
-
-		@Override
-		public TranslatableCode getTranslatableCode()
-		{
-			return new TranslatableCodeImpl(this.getRawCode());
-		}
-
-		@Override
-		public String toString()
-		{
-			return "CodeImpl [codeReference=" + this.codeReference + ", readPosition=" + this.readPosition + "]";
-		}
-
-		@Override
-		public Code newInstanceWithReplacedCode(char rawCode)
-		{
-			return new CodeImpl(rawCode, this.readPosition);
-		}
-
 	}
 
 	private static class EmptyMetaImpl extends MetaImpl
@@ -593,9 +550,9 @@ public class FastaUtils
 		}
 
 		@Override
-		public TranslatableCode getTranslatableCode()
+		public TranslatableCode asTranslatableCode()
 		{
-			return this.code.getTranslatableCode();
+			return this.code.asTranslatableCode();
 		}
 
 		@Override
@@ -671,7 +628,7 @@ public class FastaUtils
 
 		public CodeAndMeta createInstance()
 		{
-			return new CodeAndMetaImpl(	new CodeImpl(this.codeReference.get(), this.readPosition.get()),
+			return new CodeAndMetaImpl(	new DefaultCode(this.codeReference.get(), this.readPosition.get()),
 										new MetaImpl(this.descriptions.get(), this.descriptionChanged.get(), this.comments.get(), this.commentsChanged.get()));
 		}
 
@@ -715,43 +672,6 @@ public class FastaUtils
 		public void resetDescriptionChanged()
 		{
 			this.setDescriptionChanged(false);
-		}
-	}
-
-	public static interface Code
-	{
-		/**
-		 * Returns the raw code which has been read for the current position
-		 *
-		 * @return
-		 */
-		public char getRawCode();
-
-		/**
-		 * Returns a {@link TranslatableCode} wrapper around the raw {@link #getRawCode()}
-		 *
-		 * @return
-		 */
-		public TranslatableCode getTranslatableCode();
-
-		/**
-		 * Returns the read position within the {@link Stream} of codes
-		 *
-		 * @return
-		 */
-		public long getReadPosition();
-
-		/**
-		 * Returns a new {@link Code} instance with the same read position but new code reference
-		 * 
-		 * @param replacement
-		 * @return
-		 */
-		public Code newInstanceWithReplacedCode(char rawCode);
-
-		public static Code of(char codeReference, long readPosition)
-		{
-			return new FastaUtils.CodeImpl(codeReference, readPosition);
 		}
 	}
 

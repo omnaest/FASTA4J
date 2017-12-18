@@ -69,7 +69,7 @@ public class FastaUtilsTest
 
 		assertEquals(expected, sequence	.stream()
 										.limit(expected.length())
-										.map(cam -> cam	.getTranslatableCode()
+										.map(cam -> cam	.asTranslatableCode()
 														.asNucleicAcidCode()
 														.name())
 										.collect(Collectors.joining()));
