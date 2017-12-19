@@ -21,6 +21,7 @@ package org.omnaest.genetics.fasta;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -73,6 +74,18 @@ public class FastaUtilsTest
 														.asNucleicAcidCode()
 														.name())
 										.collect(Collectors.joining()));
+	}
+
+	@Test
+	@Ignore
+	public void testLoadACSL() throws Exception
+	{
+		FASTAData fastaData = FastaUtils.load()
+										.from(new File("C:/Temp/genome/genes4_primary/ACSL1"));
+		String sequence = fastaData	.asNucleicAcidCodeSequence()
+									.toString();
+		System.out.println(sequence.length());
+		System.out.println(sequence);
 	}
 
 	@Test
