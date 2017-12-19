@@ -78,10 +78,10 @@ public class FastaUtilsTest
 
 	@Test
 	@Ignore
-	public void testLoadACSL() throws Exception
+	public void testLoadOBSCN() throws Exception
 	{
 		FASTAData fastaData = FastaUtils.load()
-										.from(new File("C:/Temp/genome/genes4_primary/ACSL1"));
+										.from(new File("C:/Temp/genome/genes4_primary/OBSCN"));
 		String sequence = fastaData	.asNucleicAcidCodeSequence()
 									.toString();
 		System.out.println(sequence.length());
