@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -32,6 +33,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.omnaest.genetics.fasta.FastaUtils.CodeAndMeta;
 import org.omnaest.genetics.fasta.domain.FASTAData;
+import org.omnaest.genetics.translator.domain.NucleicAcidCodeSequence;
+import org.omnaest.utils.ThreadUtils;
 
 public class FastaUtilsTest
 {
@@ -116,6 +119,28 @@ public class FastaUtilsTest
 												.fromRawSequence(rawSequence)
 												.asCharacters();
 		assertArrayEquals(rawSequence, secondRawSequence);
+	}
+
+	/**
+	 * Performance test with chromosome 1 showed a normal consumption of about 1GB memory, after the compression about 280MB, which is a reduction by factor 3
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	@Ignore("Manual test with large memory consumption")
+	public void testLoadChromosome() throws Exception
+	{
+		FASTAData fastaData = FastaUtils.load()
+										.fromGZIP(new File("C:\\Z\\databases\\genomes_reference\\hg19\\Primary_Assembly\\assembled_chromosomes\\FASTA\\chr1.fa.gz"));
+		NucleicAcidCodeSequence nucleicAcidCodeSequence = fastaData.asNucleicAcidCodeSequence();
+
+		System.gc();
+		ThreadUtils.sleepSilently(10, TimeUnit.SECONDS);
+
+		nucleicAcidCodeSequence.usingInMemoryCompression();
+
+		System.gc();
+		ThreadUtils.sleepSilently(10, TimeUnit.SECONDS);
 	}
 
 }
