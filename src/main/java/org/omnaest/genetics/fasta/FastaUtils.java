@@ -104,9 +104,15 @@ public class FastaUtils
         }
 
         @Override
-        public String toString()
+        public String asString()
         {
             return String.valueOf(this.asCharacters());
+        }
+
+        @Override
+        public String toString()
+        {
+            return this.asString();
         }
 
         @Override
@@ -191,7 +197,7 @@ public class FastaUtils
          * @return
          * @throws IOException
          */
-        FASTAData fromGZipIfPresent(File file) throws IOException;
+        FASTAData fromGZipIfSuffixPresent(File file) throws IOException;
 
         /**
          * Loads from a GZIP file
@@ -297,7 +303,7 @@ public class FastaUtils
             }
 
             @Override
-            public FASTAData fromGZipIfPresent(File file) throws IOException
+            public FASTAData fromGZipIfSuffixPresent(File file) throws IOException
             {
                 return file.getName()
                            .endsWith(".gz") ? this.fromGZIP(file) : this.from(file);

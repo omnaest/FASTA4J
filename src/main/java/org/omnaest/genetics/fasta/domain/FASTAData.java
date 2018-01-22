@@ -33,46 +33,53 @@ import org.omnaest.genetics.translator.domain.NucleicAcidCodeSequence;
  */
 public interface FASTAData
 {
-	/**
-	 * Returns the {@link CodeAndMeta} {@link Stream}
-	 * 
-	 * @return
-	 */
-	public Stream<CodeAndMeta> getSequence();
+    /**
+     * Returns the {@link CodeAndMeta} {@link Stream}
+     * 
+     * @return
+     */
+    public Stream<CodeAndMeta> getSequence();
 
-	public NucleicAcidCodeSequence asNucleicAcidCodeSequence();
+    public NucleicAcidCodeSequence asNucleicAcidCodeSequence();
 
-	public AminoAcidCodeSequence asAminoAcidCodeSequence();
+    public AminoAcidCodeSequence asAminoAcidCodeSequence();
 
-	/**
-	 * Returns an array representation of the {@link Code} sequence
-	 * 
-	 * @see #asCharacters()
-	 * @see #toString()
-	 * @return
-	 */
-	public Code[] asCodes();
+    /**
+     * Returns an array representation of the {@link Code} sequence
+     * 
+     * @see #asCharacters()
+     * @see #toString()
+     * @return
+     */
+    public Code[] asCodes();
 
-	/**
-	 * Returns an array representation of the {@link Character} sequence
-	 * 
-	 * @see #toString()
-	 * @return
-	 */
-	public char[] asCharacters();
+    /**
+     * Returns an array representation of the {@link Character} sequence
+     * 
+     * @see #toString()
+     * @return
+     */
+    public char[] asCharacters();
 
-	/**
-	 * @see FASTADataWriter
-	 * @return
-	 */
-	public FASTADataWriter write();
+    /**
+     * @see FASTADataWriter
+     * @return
+     */
+    public FASTADataWriter write();
 
-	/**
-	 * Returns the {@link String} representation of {@link #asCharacters()}
-	 * 
-	 * @return
-	 */
-	@Override
-	public String toString();
+    /**
+     * Similar to {@link #asString()}
+     * 
+     * @return
+     */
+    @Override
+    public String toString();
+
+    /**
+     * Returns the {@link String} representation of {@link #asCharacters()}
+     * 
+     * @return
+     */
+    public String asString();
 
 }
