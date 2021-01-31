@@ -4,7 +4,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  * for the specific language governing permissions and limitations under the License.
  */
-package org.omnaest.genetics.fasta;
+package org.omnaest.genomics.fasta;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -43,13 +43,13 @@ import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.omnaest.genetics.fasta.domain.Code;
-import org.omnaest.genetics.fasta.domain.DefaultCode;
-import org.omnaest.genetics.fasta.domain.FASTAData;
-import org.omnaest.genetics.fasta.domain.FASTADataWriter;
-import org.omnaest.genetics.translator.TranslatableCode;
-import org.omnaest.genetics.translator.domain.AminoAcidCodeSequence;
-import org.omnaest.genetics.translator.domain.NucleicAcidCodeSequence;
+import org.omnaest.genomics.fasta.domain.Code;
+import org.omnaest.genomics.fasta.domain.DefaultCode;
+import org.omnaest.genomics.fasta.domain.FASTAData;
+import org.omnaest.genomics.fasta.domain.FASTADataWriter;
+import org.omnaest.genomics.translator.TranslatableCode;
+import org.omnaest.genomics.translator.domain.AminoAcidCodeSequence;
+import org.omnaest.genomics.translator.domain.NucleicAcidCodeSequence;
 
 /**
  * Utils to read and write FASTA file format

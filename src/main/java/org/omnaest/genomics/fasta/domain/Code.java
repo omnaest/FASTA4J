@@ -16,11 +16,11 @@
 
 
 */
-package org.omnaest.genetics.fasta.domain;
+package org.omnaest.genomics.fasta.domain;
 
 import java.util.stream.Stream;
 
-import org.omnaest.genetics.translator.TranslatableCode;
+import org.omnaest.genomics.translator.TranslatableCode;
 
 /**
  * Representation of a code position

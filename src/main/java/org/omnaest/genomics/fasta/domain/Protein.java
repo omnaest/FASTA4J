@@ -16,12 +16,12 @@
 
 
 */
-package org.omnaest.genetics.fasta.domain;
+package org.omnaest.genomics.fasta.domain;
 
 import java.util.Collection;
 
-import org.omnaest.genetics.translator.domain.AminoAcidCode;
-import org.omnaest.genetics.translator.domain.AminoAcidCodeSequence;
+import org.omnaest.genomics.translator.domain.AminoAcidCode;
+import org.omnaest.genomics.translator.domain.AminoAcidCodeSequence;
 
 public class Protein extends AminoAcidCodeSequence
 {

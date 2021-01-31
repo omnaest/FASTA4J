@@ -16,7 +16,7 @@
 
 
 */
-package org.omnaest.genetics.fasta;
+package org.omnaest.genomics.fasta;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -31,9 +31,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.omnaest.genetics.fasta.FastaUtils.CodeAndMeta;
-import org.omnaest.genetics.fasta.domain.FASTAData;
-import org.omnaest.genetics.translator.domain.NucleicAcidCodeSequence;
+import org.omnaest.genomics.fasta.FastaUtils;
+import org.omnaest.genomics.fasta.FastaUtils.CodeAndMeta;
+import org.omnaest.genomics.fasta.domain.FASTAData;
+import org.omnaest.genomics.translator.domain.NucleicAcidCodeSequence;
 import org.omnaest.utils.ThreadUtils;
 
 public class FastaUtilsTest

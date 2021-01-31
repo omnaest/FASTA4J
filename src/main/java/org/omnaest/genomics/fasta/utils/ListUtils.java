@@ -16,7 +16,7 @@
 
 
 */
-package org.omnaest.genetics.fasta.utils;
+package org.omnaest.genomics.fasta.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;

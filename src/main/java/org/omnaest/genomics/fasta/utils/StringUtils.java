@@ -1,4 +1,4 @@
-/*
+/* 
 
 	Copyright 2017 Danny Kunz
 
@@ -13,40 +13,20 @@
 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 	See the License for the specific language governing permissions and
 	limitations under the License.
-
+	
 
 */
-package org.omnaest.genetics.fasta.utils;
+package org.omnaest.genomics.fasta.utils;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
 
-public class IteratorUtils
-{
-	public static <T> List<T> collect(Iterator<T> iterator)
-	{
-		int skip = 0;
-		return collect(iterator, skip);
-	}
+import org.apache.commons.lang.ArrayUtils;
 
-	public static <T> List<T> collect(Iterator<T> iterator, int skip)
+public class StringUtils
+{
+	public static List<Character> toCharacterList(String value)
 	{
-		List<T> retlist = new ArrayList<>();
-		for (int ii = 0; ii < skip; ii++)
-		{
-			if (iterator.hasNext())
-			{
-				iterator.next();
-			} else
-			{
-				break;
-			}
-		}
-		while (iterator.hasNext())
-		{
-			retlist.add(iterator.next());
-		}
-		return retlist;
+		return Arrays.asList(ArrayUtils.toObject(value.toCharArray()));
 	}
 }

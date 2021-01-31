@@ -1,4 +1,4 @@
-package org.omnaest.genetics.fasta.utils;
+package org.omnaest.genomics.fasta.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

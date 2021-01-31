@@ -16,7 +16,7 @@
 
 
 */
-package org.omnaest.genetics.fasta.domain;
+package org.omnaest.genomics.fasta.domain;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.io.FileUtils;
-import org.omnaest.genetics.fasta.FastaUtils;
+import org.omnaest.genomics.fasta.FastaUtils;
 
 /**
  * Writer for the FASTA data

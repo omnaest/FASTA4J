@@ -16,10 +16,10 @@
 
 
 */
-package org.omnaest.genetics.fasta.domain;
+package org.omnaest.genomics.fasta.domain;
 
-import org.omnaest.genetics.translator.TranslatableCode;
-import org.omnaest.genetics.translator.TranslatableCodeImpl;
+import org.omnaest.genomics.translator.TranslatableCode;
+import org.omnaest.genomics.translator.TranslatableCodeImpl;
 
 public class DefaultCode implements Code
 {
